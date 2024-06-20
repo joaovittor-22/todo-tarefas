@@ -7,7 +7,7 @@
       <input type="datetime-local" v-if="withDeadline" v-model="deadline" class="form-control" /> 
       <button @click="addTodo" class="btn btn-primary rounded-btn">Salvar</button>
     </div>
-    <div class="divider"></div> <!-- Espaço entre a seção de adicionar item e a lista -->
+    <div class="divider"></div> <!--  Espaço entre a seção de adicionar item e a lista -->
     <ul class="todo-list">
       <div v-for="(todo, index) in todos" :key="index" class="todo-item" :class="{ 'completed': todo.isComplete }">
         <div v-if="!todo.isComplete" class="card">
