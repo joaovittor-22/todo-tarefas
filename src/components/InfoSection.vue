@@ -38,14 +38,19 @@ console.log(props.todo);
 const getDeadlineStatus = (date) => {
   const today = new Date();
   const dueDate = new Date(date);
-  if (dueDate < today && props.todo.status === 'andamento') {
+
+  if ( today > dueDate && props.todo.status === 'andamento') { //passou da data de entrega mas andamento
     return 'atrasado';
-  } else if (dueDate.toDateString() === today.toDateString() &&  props.todo.status === 'concluido') {
+  } else if (dueDate.toDateString() === today.toDateString() &&  props.todo.status === 'concluido') { 
     return 'concluido';
   }
-  else if(dueDate > today &&  props.todo.status === 'concluido') {
+  else if(today < dueDate &&  props.todo.status === 'concluido') { //concluiu antes da data de entrega 
     return 'concluido (adiantado)';
-  }else if( dueDate >= today && props.todo.status === 'andamento' ) {
+  }
+  else if(today > dueDate && props.todo.status === 'concluido'){ //concluiu depois da data de entrega - a data atual esta acima da data que deveria ter entregue
+    return 'Concluido (atrasado)';
+  }
+  else if( today <= dueDate && props.todo.status === 'andamento' ) { //data atual menor ou igual que a data de entrega 
     return 'em dia';
   }
 };
