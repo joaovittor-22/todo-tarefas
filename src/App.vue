@@ -162,7 +162,7 @@ watch(todos, (newTodos) => {
   }
 
   .btn {
-    width: 80%;
+    width: 90%;
   }
 
   .todo-item .card {
