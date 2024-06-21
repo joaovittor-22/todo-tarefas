@@ -38,12 +38,15 @@ console.log(props.todo);
 const getDeadlineStatus = (date) => {
   const today = new Date();
   const dueDate = new Date(date);
-  if (dueDate < today) {
+  if (dueDate < today && props.todo.status === 'andamento') {
     return 'atrasado';
-  } else if (dueDate.toDateString() === today.toDateString()) {
+  } else if (dueDate.toDateString() === today.toDateString() &&  props.todo.status === 'concluido') {
+    return 'concluido';
+  }
+  else if(dueDate > today &&  props.todo.status === 'concluido') {
+    return 'concluido (adiantado)';
+  }else if( dueDate >= today && props.todo.status === 'andamento' ) {
     return 'em dia';
-  } else {
-    return 'adiantado';
   }
 };
 
