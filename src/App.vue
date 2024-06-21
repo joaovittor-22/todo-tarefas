@@ -1,91 +1,28 @@
 <template>
   <div class="container">
     <div class="form-group">
-      <input v-model="newTask" placeholder="Crie uma nova tarefa" class="form-control" required/>
+      <input v-model="newTask" placeholder="Crie uma nova tarefa" class="form-control" required />
       <input type="checkbox" v-model="withDeadline" class="form-check-input" />
       <label class="form-check-label">Com prazo</label>
-      <input type="datetime-local" v-if="withDeadline" v-model="deadline" class="form-control" /> 
+      <input type="datetime-local" v-if="withDeadline" v-model="deadline" class="form-control" />
       <button @click="addTodo" class="btn btn-primary rounded-btn">Salvar</button>
     </div>
-    <div class="divider"></div> <!--  Espaço entre a seção de adicionar item e a lista -->
+
+    <div class="divider"></div>
     <ul class="todo-list">
-      <div v-for="(todo, index) in todos" :key="index" class="todo-item" :class="{ 'completed': todo.isComplete }">
-        <div v-if="!todo.isComplete" class="card">
-          <input v-model="todo.name" placeholder="Tarefa" @input="saveTodos" class="form-control" />
-          <div class="custom-select">
-            <select v-model="todo.status" @change="saveTodos"
-                    :style="{ borderRightColor: getBorderColor(todo.status) }">
-              <option value="concluido">Concluído</option>
-              <option value="andamento">Em andamento</option>
-              <option value="cancelado">Cancelado</option>
-            </select>
-            <div class="options" v-if="showOptions">
-              <div v-for="option in statusOptions" :key="option.value"
-                   class="option" @click="selectOption(option)">
-                {{ option.label }}
-              </div>
-            </div>
-          </div>
-          <button @click="openModal(todo)" class="btn btn-secondary rounded-btn">Adicionar Descrição</button> <!-- Adicionar descrição -->
-          <button @click="deleteTodo(index)" class="btn btn-danger rounded-btn">Excluir</button> <!-- Botão de exclusão -->
-
-
-      <div v-if="todo.status !== 'cancelado'" class="info-section">
-        <div v-if="todo.withDeadline" class="deadline-info">
-          <div>
-            Prazo: {{ formatDeadline(todo.deadline) }}
-          </div>
-          <div>
-            Status: {{ getDeadlineStatus(todo.deadline) }}
-          </div>
-          <div v-if="todo.description" class="description">
-            Descrição: {{ todo.description }}
-          </div>
-        </div>
-      </div>
-      <div v-else class="cancelled">
-        <div>
-          Status: cancelado
-        </div>
-        <div v-if="todo.description" class="description">
-          Descrição: {{ todo.description }}
-        </div>
-      </div>
-      <div v-if="!todo.withDeadline && todo.status !== 'cancelado'" class="info-section">
-        <div v-if="todo.description" class="description">
-          Descrição: {{ todo.description }}
-        </div>
-      </div>
-    </div>
-  </div>
-</ul>
-<div v-if="modalOpen" class="modal">
-  <div class="modal-content">
-    <span class="close" @click="closeModal">&times;</span>
-    <h2 class="desc-title">Adicione uma Descrição</h2>
-    <textarea v-model="modalDescription" class="form-control"></textarea>
-    <button @click="saveDescription" class="btn btn-primary rounded-btn">Salvar</button>
-  </div>
-</div>
-
+      <ItemDaLista v-for="(todo, index) in todos" :key="index" :todo="todo" :index="index" :todos="todos" @update="updateTodo" @delete="deleteTodo" />
+    </ul>
   </div>
 </template>
-<script setup>
-import { ref, watch } from 'vue'
 
-const newTask = ref('')
-const withDeadline = ref(false)
-const deadline = ref('')
-const todos = ref(JSON.parse(localStorage.getItem('todos')) || [])
-const modalOpen = ref(false)
-const modalDescription = ref('')
-const currentTodo = ref(null)
-const showOptions = ref(false)
-const statusOptions = [
-  { value: 'concluido', label: 'Concluído', color: '#28a745' },
-  { value: 'andamento', label: 'Em andamento', color: '#ffc107' },
-  { value: 'cancelado', label: 'Cancelado', color: '#dc3545' }
-]
+<script setup>
+import { ref, watch } from 'vue';
+import ItemDaLista from './components/ItemDaLista.vue';
+
+const newTask = ref('');
+const withDeadline = ref(false);
+const deadline = ref('');
+const todos = ref(JSON.parse(localStorage.getItem('todos')) || []);
 
 const addTodo = () => {
   if (newTask.value.trim() !== '') {
@@ -96,78 +33,32 @@ const addTodo = () => {
       deadline: withDeadline.value ? deadline.value : null,
       isComplete: false,
       description: ''
-    })
-    newTask.value = ''
-    withDeadline.value = false
-    deadline.value = ''
-    saveTodos()
+    });
+    newTask.value = '';
+    withDeadline.value = false;
+    deadline.value = '';
+    saveTodos();
   }
-}
+};
 
 const saveTodos = () => {
-  localStorage.setItem('todos', JSON.stringify(todos.value))
-}
+  localStorage.setItem('todos', JSON.stringify(todos.value));
+};
+
+const updateTodo = ({ index, todo }) => {
+  todos.value[index] = todo;
+  saveTodos();
+};
 
 const deleteTodo = (index) => {
-  todos.value.splice(index, 1)
-  saveTodos()
-}
+  todos.value.splice(index, 1);
+  saveTodos();
+};
 
-const getDeadlineStatus = (date) => {
-  const today = new Date()
-  const dueDate = new Date(date)
-  if (dueDate < today) {
-    return 'atrasado'
-  } else if (dueDate.toDateString() === today.toDateString()) {
-    return 'em dias'
-  } else {
-    return 'adiantado'
-  }
-}
-
-const formatDeadline = (date) => {
-  const dueDate = new Date(date)
-  return dueDate.toLocaleString('pt-BR', { hour: '2-digit', minute: '2-digit', day: '2-digit', month: '2-digit', year: 'numeric' })
-}
-
-const openModal = (todo) => {
-  modalDescription.value = todo.description || ''
-  currentTodo.value = todo
-  modalOpen.value = true
-}
-
-const closeModal = () => {
-  modalOpen.value = false
-  currentTodo.value = null
-}
-
-const saveDescription = () => {
-  if (currentTodo.value) {
-    currentTodo.value.description = modalDescription.value
-    saveTodos()
-    closeModal()
-  }
-}
-
-// Escuta as mudas na lista de tasks a serem salvas
+// Watch for changes to todos and save to local storage
 watch(todos, (newTodos) => {
-  localStorage.setItem('todos', JSON.stringify(newTodos))
-}, { deep: true })
-
-const selectOption = (option) => {
-  currentTodo.value.status = option.value
-  saveTodos()
-  showOptions.value = false
-}
-
-const getBorderColor = (status) => {
-  const statusColors = {
-    'concluido': '#28a745',   // Verde para 'concluido'
-    'andamento': '#ffc107',   // Amarelo para 'andamento'
-    'cancelado': '#dc3545'    // Vermelho para 'cancelado'
-  };
-  return statusColors[status] || '#ccc'; // Retorna cinza como padrão se o status não for encontrado
-}
+  localStorage.setItem('todos', JSON.stringify(newTodos));
+}, { deep: true });
 </script>
 <style scoped>
 .container {
@@ -178,12 +69,6 @@ const getBorderColor = (status) => {
   min-height: 100vh; /* Garante que o container preencha a altura da viewport */
   display: flex;
   flex-direction: column;
-}
-
-@media (max-width: 1245px) and (min-width: 481px) {
-  .btn-danger{
-    margin-top: 15px;
-  }
 }
 
 .desc-title{
@@ -218,6 +103,12 @@ const getBorderColor = (status) => {
   padding: 8px 20px;
   margin-left: 10px;
   cursor: pointer;
+
+}
+
+.btn:first-of-type {
+  margin-top: 8px;
+  border-radius: 6px;
 }
 
 .btn-primary {
@@ -232,15 +123,6 @@ const getBorderColor = (status) => {
   color: #fff;
 }
 
-.btn-danger {
-  background-color: #dc3545;
-  border-color: #dc3545;
-  color: #fff;
-}
-
-.rounded-btn {
-  border-radius: 12px;
-}
 
 .todo-list {
   list-style: none;
@@ -249,75 +131,6 @@ const getBorderColor = (status) => {
   overflow-y: auto; /* Habilita rolagem se o conteúdo exceder a altura do container */
 }
 
-.todo-item {
-  margin-bottom: 10px;
-  min-height: 80px;
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 8px;
-  padding: 10px;
-}
-
-.todo-item.completed {
-  opacity: 0.6;
-}
-
-.card {
-  padding: 10px;
-  border-radius: 8px;
-  background-color: rgba(255, 255, 255, 0.8);
-}
-
-.info-section {
-  margin-top: 5px;
-}
-
-.deadline-info {
-  margin-bottom: 5px;
-}
-
-.cancelled {
-  margin-top: 5px;
-  color: #dc3545;
-}
-
-.description {
-  margin-top: 5px;
-  font-size: 0.9em;
-}
-
-.modal {
-  display: block;
-  position: fixed;
-  z-index: 1;
-  left: 0;
-  top: 0;
-  width: 100%;
-  height: 100%;
-  overflow: auto;
-  background-color: rgba(0, 0, 0, 0.4);
-}
-
-.modal-content {
-  background-color: #fefefe;
-  margin: 15% auto;
-  padding: 20px;
-  border: 1px solid #888;
-  width: 80%;
-}
-
-.close {
-  color: #aaa;
-  float: right;
-  font-size: 28px;
-  font-weight: bold;
-}
-
-.close:hover,
-.close:focus {
-  color: black;
-  text-decoration: none;
-  cursor: pointer;
-}
 
 .divider {
   margin-top: 10px;
@@ -327,52 +140,6 @@ const getBorderColor = (status) => {
 }
 
 /* Estilos do Select Personalizado */
-.custom-select {
-  position: relative;
-  display: inline-block;
-  width: 200px; /* Ajuste a largura conforme necessário */
-}
-
-.custom-select select {
-  display: block;
-  width: 100%;
-  padding: 8px;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  border: 1px solid #ccc;
-  border-radius: 4px;
-  background-color: #fff;
-  color: #000;
-  border-right: #ccc 8px solid;
-}
-
-.custom-select .options {
-  position: absolute;
-  z-index: 1;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  display: none;
-  background-color: #fff;
-  border: 1px solid #ccc;
-  border-top: none;
-  border-radius: 0 0 4px 4px;
-}
-
-.custom-select .options.active {
-  display: block;
-}
-
-.custom-select .option {
-  padding: 8px;
-  cursor: pointer;
-}
-
-.custom-select .option:hover {
-  background-color: #f0f0f0;
-}
-
 @media (max-width: 1050px) {
   .form-control {
        margin-bottom:15px;
@@ -404,10 +171,10 @@ const getBorderColor = (status) => {
     align-items: center;
   }
 
-  .custom-select {
+  /* .custom-select {
     width: 100%;
     margin-bottom: 10px;
-  }
+  } */
 
   .options {
     width: 100%;
@@ -419,11 +186,6 @@ const getBorderColor = (status) => {
     display: flex;
     flex-direction: column;
     align-items: center;
-  }
-
-  .todo-item .card button {
-    width: 100%;
-    margin-top: 10px;
   }
 
   .description {
